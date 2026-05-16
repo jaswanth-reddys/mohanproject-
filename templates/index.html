@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>College Chatbot</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Manav Rachna College Chatbot</h1>
+        <p>Ask any question about admissions, programs, faculty, contact, or notices.</p>
+      </header>
+
+      <section class="chat-window" id="chatWindow">
+      </section>
+
+      <div class="suggestions">
+        <button onclick="askQuestion('What are the programs offered?')">Programs</button>
+        <button onclick="askQuestion('Tell me about admissions.')">Admissions</button>
+        <button onclick="askQuestion('How can I contact the college?')">Contact Us</button>
+        <button onclick="askQuestion('Are there any notices?')">Notices</button>
+      </div>
+
+      <form id="chatForm">
+        <input id="questionInput" type="text" placeholder="Type your question here..." autocomplete="off" />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+
+    <script>
+      const chatWindow = document.getElementById('chatWindow');
+      const chatForm = document.getElementById('chatForm');
+      const questionInput = document.getElementById('questionInput');
+
+      // Add initial greeting
+      window.addEventListener('DOMContentLoaded', () => {
+        appendMessage('bot', 'Hello! I am the Manav Rachna College Assistant. How can I help you today?');
+      });
+
+      function askQuestion(q) {
+        questionInput.value = q;
+        chatForm.dispatchEvent(new Event('submit'));
+      }
+
+      function appendMessage(role, text) {
+        const messageContainer = document.createElement('div');
+        messageContainer.className = `message-container ${role}`;
+
+        const label = document.createElement('div');
+        label.className = 'message-label';
+        label.innerText = role === 'bot' ? 'Gemini AI' : 'You';
+
+        const messageBody = document.createElement('div');
+        messageBody.className = `message ${role}`;
+        
+        if (role === 'bot') {
+          messageBody.innerHTML = text;
+        } else {
+          messageBody.innerText = text;
+        }
+
+        messageContainer.appendChild(label);
+        messageContainer.appendChild(messageBody);
+        chatWindow.appendChild(messageContainer);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+      }
+
+      chatForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const question = questionInput.value.trim();
+        if (!question) return;
+        appendMessage('user', question);
+        questionInput.value = '';
+        appendMessage('bot', '<em>Searching the college website...</em>');
+
+        try {
+          const response = await fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question }),
+          });
+          const result = await response.json();
+          chatWindow.removeChild(chatWindow.lastChild);
+          appendMessage('bot', result.answer || 'No answer found.');
+        } catch (error) {
+          chatWindow.removeChild(chatWindow.lastChild);
+          appendMessage('bot', 'Unable to reach the server. Please try again later.');
+        }
+      });
+    </script>
+  </body>
+</html>
